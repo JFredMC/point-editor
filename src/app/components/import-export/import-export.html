@@ -1,0 +1,82 @@
+<div class="d-flex flex-column h-100">
+    <div class="box-shadow rounded p-3 bg-white">
+
+        <div class="mb-4">
+            <span class="fw-bold mb-1 fs-6">
+                <i class="bi bi-geo-alt fs-7"></i>
+                POI Map Editor
+            </span>
+            <p class="text-muted mb-0 fs-8">
+                Manage points of interest on the map
+            </p>
+        </div>
+        <hr class="my-4">
+
+        <div class="container-fluid px-0 py-2">
+            <input
+                type="file"
+                #fileInput
+                (change)="onFileSelected($event)" 
+                [accept]="accepts()"
+                hidden
+            />
+            <div class="d-flex justify-content-between flex-wrap gap-2">
+                <button
+                    class="btn btn-primary btn-sm px-4"
+                    (click)="fileInput.click()"
+                >
+                    <i class="bi bi-upload"></i> Import
+                </button>
+                <button
+                    class="btn btn-primary btn-sm px-4"
+                    [disabled]="features().length === 0"
+                    (click)="exportGeoJSON()"
+                >
+                    <i class="bi bi-download"></i> Export
+                </button>
+                <button
+                    class="btn btn-outline-danger btn-sm fw-bold px-4"
+                    [disabled]="features().length === 0"
+                    (click)="clearData()"
+                >
+                    <i class="bi bi-arrow-counterclockwise"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <hr class="my-4">
+    </div>
+
+    <div class="flex-grow-1 p-3 h-75 bg-white">
+        <div class="border rounded p-3 shadow-sm h-100 overflow-auto">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">Points of Interest</h5>
+                <span class="badge bg-secondary">{{ features().length }}</span>
+            </div>
+
+            @if(features().length === 0) {
+                <div class="text-center py-4 text-muted">
+                    <p>No points of interest yet</p>
+                    <p class="small">Import a GeoJSON file or add points manually</p>
+                </div>
+            } @else {
+                <div class="list-group">
+                    @for(feature of features(); track feature.id) {
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ feature.properties.name || 'Unnamed Point' }}</h6>
+                            <p class="mb-1 small text-muted">
+                                {{ feature.geometry.coordinates[0] | number:'1.4-4' }}, 
+                                {{ feature.geometry.coordinates[1] | number:'1.4-4' }}
+                            </p>
+                            @if(feature.properties.category) {
+                                <span class="badge bg-secondary">{{ feature.properties.category }}</span>
+                            }
+                        </div>
+                    </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

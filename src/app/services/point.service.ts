@@ -303,7 +303,7 @@ export class PointService {
     this.saveToLocalStorage();
   }
 
-  // New search methods
+  // Search methods
   public setSearchTerm(term: string): void {
     this.searchTermSignal.set(term);
   }

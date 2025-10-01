@@ -1,5 +1,5 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-import { GeoJSONSource, Map, MapMouseEvent, Marker, NavigationControl, Popup } from 'maplibre-gl';
+import maplibregl, { GeoJSONSource, Map, MapMouseEvent, Marker, NavigationControl, Popup } from 'maplibre-gl';
 import { PointService } from './point.service';
 import { GeoJSONFeature } from '../models/geojson';
 import { MapConfig } from '../models/map.interface';
@@ -31,13 +31,12 @@ export class MapService {
   public readonly selectedFeature = signal<GeoJSONFeature | null>(null);
   public readonly clickCoordinates = signal<[number, number] | null>(null);
   private readonly currentFeatures = computed(() => this.pointService.filteredFeatures());
+  private readonly features = computed(() => this.pointService.features());
 
   constructor() {
      effect(() => {
-      const features = this.currentFeatures();
-      
       if (this.map) {
-        this.updateMapFeatures(features);
+        this.updateMapFeatures(this.currentFeatures());
       }
     });
   }
@@ -148,22 +147,6 @@ export class MapService {
           'text-halo-width': 2
         }
       });
-      this.map.addLayer({
-        id: 'poi-labels',
-        type: 'symbol',
-        source: 'pois',
-        layout: {
-          'text-field': ['get', 'name'],
-          'text-size': 12,
-          'text-offset': [0, 1.5],
-          'text-anchor': 'top'
-        },
-        paint: {
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 2
-        }
-      });
-
     } catch (error) {
       console.error('Failed to initialize map layers:', error);
     }
@@ -223,7 +206,7 @@ export class MapService {
   /**
    * Updates map features in the GeoJSON source
    */
-  private updateMapFeatures(features: GeoJSONFeature[]): void {
+  public updateMapFeatures(features: GeoJSONFeature[]): void {
     if (!this.map) return;
 
     const source = this.map.getSource('pois') as GeoJSONSource;
@@ -279,15 +262,15 @@ export class MapService {
   }
 
   private showTempMarker(coordinates: [number, number]): void {
-    // Remover marcador anterior si existe
     this.removeTempMarker();
     this.selectedFeature.set(null);
-
     if (!this.map) return;
-    if (!this.popup) return;
+    if (this.popup) {
+      this.removeExistingPopup();
+    };
 
     this.tempMarker = new Marker({
-      color: "#ff0404ff",
+      color: "blue",
       anchor: 'center',
       draggable: true
     })
@@ -334,5 +317,29 @@ export class MapService {
       this.map.remove();
       this.map = undefined;
     }
+  }
+
+  /**
+   * Centers the map view to fit all the provided features.
+   * @param features - An array of GeoJSON features to fit the map to.
+  */
+  public fitToFeatures(features: GeoJSONFeature[]): void {
+    if (!this.map || features.length === 0) {
+      return;
+    }
+
+    const bounds = new maplibregl.LngLatBounds();
+
+    features.forEach(feature => {
+      if (feature.geometry.type === 'Point') {
+        const coordinates = feature.geometry.coordinates as [number, number];
+        bounds.extend(coordinates);
+      }
+    });
+
+    this.map.fitBounds(bounds, {
+      padding: features.length === this.features().length ? 450 : 100,
+      duration: 1000,
+    });
   }
 }

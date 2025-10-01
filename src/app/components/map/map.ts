@@ -1,16 +1,17 @@
-import { Component, OnInit, OnDestroy, ElementRef, inject, viewChild, model, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, inject, viewChild, model, computed, effect } from '@angular/core';
 import { MapService } from '../../services/map.service';
 import { PointService } from '../../services/point.service';
 import { SweetAlertService } from '../../services/sweet-alert.service';
 import { PointFormData, PointFormModalData } from '../../models/geojson';
 import { PointFormModal } from '../point-form-modal/point-form-modal';
 import { Search } from '../search/search';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-map',
   templateUrl: './map.html',
   styleUrl: './map.css',
-  imports: [PointFormModal, Search],
+  imports: [PointFormModal, Search, CommonModule],
 })
 export class Map implements OnInit, OnDestroy {
   // Reference to the map container using viewChild
@@ -27,6 +28,22 @@ export class Map implements OnInit, OnDestroy {
   public features = computed(() => this.pointService.filteredFeatures());
   public selectedFeature = computed(() => this.mapService.selectedFeature());
   public clickCoordinates = computed(() => this.mapService.clickCoordinates());
+
+  constructor() {
+    effect(() => {
+      const filtered = this.features();
+      const map = this.mapService.getMap();
+      
+      if (map) {
+        this.mapService.updateMapFeatures(filtered);
+        if (filtered.length > 0) {
+          setTimeout(() => {
+            this.mapService.fitToFeatures(filtered);
+          });
+        }
+      }
+    });
+  }
 
   /**
    * Initializes the map when loading the component
@@ -78,10 +95,8 @@ export class Map implements OnInit, OnDestroy {
    * @param formData - The data from the point form.
    */
   public onSavePoint(formData: PointFormData): void {
-    console.log('onSavePoint: ', formData);
     const modalData = this.modalData();
     if (!modalData) return;
-    console.log('onSavePoint modalData: ', modalData);
 
     if (modalData.mode === 'add' && modalData.coordinates) {
       this.pointService.addFeature(modalData.coordinates, formData);

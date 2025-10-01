@@ -1,44 +1,43 @@
-<!-- map.html -->
-<div #map id="map" class="d-flex flex-column h-100 rounded shadow-sm"></div>
+<div #map id="map" class="d-flex flex-column h-100 rounded shadow-sm "></div>
 
 <div class="position-absolute top-0 start-50 translate-middle-x m-3">
   <div class="d-flex flex-wrap align-items-center gap-2">
-    <!-- Existing CRUD Buttons -->
     <div class="d-flex flex-wrap">
       <button 
-        class="btn btn-light shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
-        (click)="showAddModal()"
-        [disabled]="!clickCoordinates() || selectedFeature()"
-        title="Add point at clicked location"
+          class="btn shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
+          [ngClass]="{'btn-primary': clickCoordinates() && !selectedFeature(), 'btn-light': !clickCoordinates() || selectedFeature()}"
+          (click)="showAddModal()"
+          [disabled]="!clickCoordinates() || selectedFeature()"
+          title="Add point at clicked location"
       >
-        <i class="bi bi-plus-circle"></i>
+          <i class="bi bi-plus-circle"></i>
       </button>
-
       <button 
-        class="btn btn-light shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
-        (click)="showEditModal()"
-        [disabled]="!selectedFeature()"
-        title="Edit selected point"
+          class="btn shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
+          [ngClass]="{'btn-info': selectedFeature(), 'btn-light': !selectedFeature()}"
+          (click)="showEditModal()"
+          [disabled]="!selectedFeature()"
+          title="Edit selected point"
       >
-        <i class="bi bi-pencil"></i>
+          <i class="bi bi-pencil"></i>
       </button>
-
       <button 
-        class="btn btn-light shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
-        (click)="deletePoint()"
-        [disabled]="!selectedFeature()"
-        title="Delete selected point"
+          class="btn shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
+          [ngClass]="{'btn-danger': selectedFeature(), 'btn-light': !selectedFeature()}"
+          (click)="deletePoint()"
+          [disabled]="!selectedFeature()"
+          title="Delete selected point"
       >
-        <i class="bi bi-trash"></i>
+          <i class="bi bi-trash"></i>
       </button>
-
       <button 
-        class="btn btn-light shadow mb-2 d-flex align-items-center gap-2 py-2 px-3"
-        (click)="clearSelection()"
-        [disabled]="!selectedFeature() || !clickCoordinates()"
-        title="Clear selection"
+          class="btn shadow mb-2 d-flex align-items-center gap-2 py-2 px-3"
+          [ngClass]="{'btn-warning': selectedFeature() && clickCoordinates(), 'btn-light': !selectedFeature() || !clickCoordinates()}"
+          (click)="clearSelection()"
+          [disabled]="!selectedFeature() || !clickCoordinates()"
+          title="Clear selection"
       >
-        <i class="bi bi-x-circle"></i>
+          <i class="bi bi-x-circle"></i>
       </button>
     </div>
     

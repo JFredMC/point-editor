@@ -53,7 +53,7 @@
                                     </option>
                                 }
                             </select>
-                            @if (isFieldInvalid('category')) {
+                            @if (isFieldInvalid('category') && categoriesList().length > 0) {
                                 <div class="invalid-feedback">
                                     {{ getFieldError('category') }}
                                 </div>

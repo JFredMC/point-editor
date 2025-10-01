@@ -42,8 +42,8 @@ export class PointFormModal implements OnInit {
 
   private initializeForm(property?: IProperty): void {
     this.pointForm = this.fb.group({
-      name: [property?.name, [Validators.required, Validators.minLength(2)]],
-      category: [property?.category, Validators.required]
+      name: [property?.name, [Validators.required, Validators.minLength(3)]],
+      category: [property?.category, this.categoriesList().length > 0 ? Validators.required : null]
     });
   }
 

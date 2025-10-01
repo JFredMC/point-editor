@@ -18,7 +18,7 @@ export class ImportExport {
   // Signals
   public importResult = signal<ImportResult | null>(null);
   public accepts = signal<string>('.geojson,.json');
-  public features = computed(() => this.pointService.features());
+  public features = computed(() => this.pointService.filteredFeatures());
 
   /**
    * Handles file selection for importing GeoJSON data

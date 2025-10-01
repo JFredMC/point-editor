@@ -30,7 +30,7 @@ export class MapService {
   // Signals
   public readonly selectedFeature = signal<GeoJSONFeature | null>(null);
   public readonly clickCoordinates = signal<[number, number] | null>(null);
-  private readonly currentFeatures = computed(() => this.pointService.features());
+  private readonly currentFeatures = computed(() => this.pointService.filteredFeatures());
 
   constructor() {
      effect(() => {

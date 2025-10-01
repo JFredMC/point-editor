@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 import {
   GeoJSONFeature,
   GeoJSONFeatureCollection,
@@ -14,6 +14,41 @@ export class PointService {
   // Signals
   private featuresSignal = signal<GeoJSONFeature[]>([]);
   public features = this.featuresSignal.asReadonly();
+
+  // New search signals
+  public searchTermSignal = signal<string>('');
+  public searchCategorySignal = signal<string>('');
+
+  // Computed signal for filtered features
+  public filteredFeatures = computed(() => {
+    const term = this.searchTermSignal().toLowerCase().trim();
+    const category = this.searchCategorySignal().toLowerCase().trim();
+    const allFeatures = this.featuresSignal();
+
+    if (!term && !category) {
+      return allFeatures;
+    }
+
+    return allFeatures.filter(feature => {
+      const nameMatch = !term || 
+        feature.properties.name.toLowerCase().includes(term);
+      const categoryMatch = !category || 
+        feature.properties.category.toLowerCase().includes(category);
+      
+      return nameMatch && categoryMatch;
+    });
+  });
+
+  // Computed signal for available categories
+  public availableCategories = computed(() => {
+    const categories = new Set<string>();
+    this.featuresSignal().forEach(feature => {
+      if (feature.properties.category) {
+        categories.add(feature.properties.category);
+      }
+    });
+    return Array.from(categories).sort();
+  });
 
   constructor() {
     this.loadFromLocalStorage();
@@ -268,25 +303,17 @@ export class PointService {
     this.saveToLocalStorage();
   }
 
-  /**
-   * Gets a feature by its ID.
-   * @param featureId ID of the feature to search for
-   * @returns The feature found or undefined
-  */
-  public getFeatureById(featureId: string): GeoJSONFeature | undefined {
-    return this.featuresSignal().find(
-      (feature) => feature.id === featureId,
-    );
+  // New search methods
+  public setSearchTerm(term: string): void {
+    this.searchTermSignal.set(term);
   }
 
-  /**
-   * Finds the index of a feature by its ID.
-   * @param featureId ID of the feature to search for
-   * @returns The index of the feature or -1 if not found
-  */
-  public findFeatureIndexById(featureId: string): number {
-    return this.featuresSignal().findIndex(
-      (feature) => feature.id === featureId,
-    );
+  public setSearchCategory(category: string): void {
+    this.searchCategorySignal.set(category);
+  }
+
+  public clearSearch(): void {
+    this.searchTermSignal.set('');
+    this.searchCategorySignal.set('');
   }
 }

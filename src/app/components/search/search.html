@@ -1,0 +1,65 @@
+<div class="search-container d-flex align-items-center gap-2 p-2 bg-light rounded shadow-sm">
+      <!-- Search by Name -->
+      <div class="input-group input-group-sm" style="min-width: 200px;">
+        <span class="input-group-text bg-white">
+          <i class="bi bi-search"></i>
+        </span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search by name..."
+          [value]="searchTerm()"
+          (input)="onSearchTermChange($event)"
+          #searchInput
+        />
+        @if (searchTerm()) {
+          <button 
+            class="btn btn-outline-secondary" 
+            type="button"
+            (click)="clearSearchTerm()"
+            title="Clear search"
+          >
+            <i class="bi bi-x"></i>
+          </button>
+        }
+      </div>
+
+      <!-- Search by Category -->
+      <div class="input-group input-group-sm" style="min-width: 180px;">
+        <span class="input-group-text bg-white">
+          <i class="bi bi-tags"></i>
+        </span>
+        <select
+          class="form-select"
+          [value]="searchCategory()"
+          (change)="onSearchCategoryChange($event)"
+          #categorySelect
+        >
+          <option value="">All categories</option>
+          @for (category of availableCategories(); track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+        @if (searchCategory()) {
+          <button 
+            class="btn btn-outline-secondary" 
+            type="button"
+            (click)="clearSearchCategory()"
+            title="Clear category"
+          >
+            <i class="bi bi-x"></i>
+          </button>
+        }
+      </div>
+
+      <!-- Clear All Filters -->
+      @if (hasActiveFilters()) {
+        <button 
+          class="btn btn-outline-secondary btn-sm"
+          (click)="clearAllFilters()"
+          title="Clear all filters"
+        >
+          <i class="bi bi-arrow-counterclockwise"></i>
+        </button>
+      }
+    </div>

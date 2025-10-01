@@ -4,12 +4,13 @@ import { PointService } from '../../services/point.service';
 import { SweetAlertService } from '../../services/sweet-alert.service';
 import { PointFormData, PointFormModalData } from '../../models/geojson';
 import { PointFormModal } from '../point-form-modal/point-form-modal';
+import { Search } from '../search/search';
 
 @Component({
   selector: 'app-map',
   templateUrl: './map.html',
   styleUrl: './map.css',
-  imports: [PointFormModal],
+  imports: [PointFormModal, Search],
 })
 export class Map implements OnInit, OnDestroy {
   // Reference to the map container using viewChild
@@ -23,7 +24,7 @@ export class Map implements OnInit, OnDestroy {
   // Signals for the component status
   public showModal = model(false);
   public modalData = model<PointFormModalData | null>(null);
-  public features = computed(() => this.pointService.features());
+  public features = computed(() => this.pointService.filteredFeatures());
   public selectedFeature = computed(() => this.mapService.selectedFeature());
   public clickCoordinates = computed(() => this.mapService.clickCoordinates());
 

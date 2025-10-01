@@ -1,9 +1,9 @@
 import { Component, inject, model, OnInit, output, signal } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { GeoJSONFeature, IProperty, PointFormData, PointFormModalData } from '../../models/geojson';
+import { GeoJSONFeature, IProperty, PointFormData, PointFormModalData } from '../../types/geojson';
 import { CommonModule } from '@angular/common';
 import { PointService } from '../../services/point.service';
-import { ISelect } from '../../models/select.interface';
+import { ISelect } from '../../types/select';
 
 @Component({
   selector: 'app-point-form-modal',

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { PointService } from '../../services/point.service';
-import { ImportResult } from '../../models/geojson';
+import { ImportResult } from '../../types/geojson';
 import { SweetAlertService } from '../../services/sweet-alert.service';
 
 @Component({

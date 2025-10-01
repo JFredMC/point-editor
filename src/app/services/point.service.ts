@@ -3,7 +3,7 @@ import {
   GeoJSONFeature,
   GeoJSONFeatureCollection,
   ImportResult,
-} from '../models/geojson';
+} from '../types/geojson';
 
 @Injectable({
   providedIn: 'root'

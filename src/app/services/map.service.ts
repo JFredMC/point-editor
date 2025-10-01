@@ -1,8 +1,8 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import maplibregl, { GeoJSONSource, Map, MapMouseEvent, Marker, NavigationControl, Popup } from 'maplibre-gl';
 import { PointService } from './point.service';
-import { GeoJSONFeature } from '../models/geojson';
-import { MapConfig } from '../models/map.interface';
+import { GeoJSONFeature } from '../types/geojson';
+import { MapConfig } from '../types/map';
 
 /**
  * Default map configuration

@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ElementRef, inject, viewChild, model, com
 import { MapService } from '../../services/map.service';
 import { PointService } from '../../services/point.service';
 import { SweetAlertService } from '../../services/sweet-alert.service';
-import { PointFormData, PointFormModalData } from '../../models/geojson';
+import { PointFormData, PointFormModalData } from '../../types/geojson';
 import { PointFormModal } from '../point-form-modal/point-form-modal';
 import { Search } from '../search/search';
 import { CommonModule } from '@angular/common';

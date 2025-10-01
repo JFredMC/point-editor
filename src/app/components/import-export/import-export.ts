@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { PointService } from '../../services/point.service';
 import { ImportResult } from '../../models/geojson';
 import { SweetAlertService } from '../../services/sweet-alert.service';
@@ -15,11 +15,14 @@ export class ImportExport {
   public readonly pointService = inject(PointService);
   private readonly sweetAlertService = inject(SweetAlertService);
 
-  //Signals
+  // Signals
   public importResult = signal<ImportResult | null>(null);
   public accepts = signal<string>('.geojson,.json');
   public features = computed(() => this.pointService.features());
 
+  /**
+   * Handles file selection for importing GeoJSON data
+   */
   public async onFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
@@ -59,6 +62,9 @@ export class ImportExport {
     }
   }
 
+  /**
+   * Exports current data to a GeoJSON file and triggers download
+   */
   public exportGeoJSON(): void {
     const data = this.pointService.exportGeoJSON();
     const blob = new Blob([data], { type: 'application/json' });
@@ -73,6 +79,9 @@ export class ImportExport {
     URL.revokeObjectURL(url);
   }
 
+  /**
+   * Requests user confirmation and then clears all data
+   */
   public clearData(): void {
     this.sweetAlertService.confirm(
       'Clear',
@@ -89,5 +98,24 @@ export class ImportExport {
     })
   }
 
-
+  /**
+   * Requests user confirmation and then deletes a specific point(feature)
+  */
+  public deleteFeature(
+    featureId?: string | number,
+  ): void {
+    if (!featureId) return;
+    this.sweetAlertService.confirm(
+      'Delete Point',
+      'Are you sure you want to delete this point?'
+    ).then((response) => {
+      if(response.isConfirmed) {
+        this.pointService.removeFeature(featureId);
+        this.sweetAlertService.showAlert(
+          'Deleted',
+          'Point successfully deleted!'
+        )
+      }
+    })
+  }
 }

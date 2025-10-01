@@ -8,6 +8,7 @@ export interface GeoJSONFeature {
     name: string;
     category: string;
     [key: string]: any;
+    _featureId: string;
   };
 }
 
@@ -38,6 +39,7 @@ export interface IProperty {
   name: string;
   category: string;
   [key: string]: any;
+  _featureId: string;
 }
 
 export interface GeoJSONFeatureCollection {
@@ -54,6 +56,7 @@ export interface ImportResult {
 export interface PointFormData {
   name: string;
   category: string;
+  _featureId: string;
 }
 
 export interface PointFormModalData {

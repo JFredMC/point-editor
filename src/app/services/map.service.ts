@@ -1,5 +1,5 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-import { GeoJSONSource, Map, MapMouseEvent, NavigationControl, Popup } from 'maplibre-gl';
+import { GeoJSONSource, Map, MapMouseEvent, Marker, NavigationControl, Popup } from 'maplibre-gl';
 import { PointService } from './point.service';
 import { GeoJSONFeature } from '../models/geojson';
 import { MapConfig } from '../models/map.interface';
@@ -10,7 +10,7 @@ import { MapConfig } from '../models/map.interface';
 const default_map_config: MapConfig = {
   center: [-70.6483, -33.4569],
   zoom: 2,
-  style: 'https://demotiles.maplibre.org/globe.json'
+  style: 'https://tiles.stadiamaps.com/styles/osm_bright.json'
 };
 @Injectable({
   providedIn: 'root'
@@ -22,6 +22,7 @@ export class MapService {
 
   /** Main MapLibre GL map instance */
   private map: Map | undefined;
+  private tempMarker: Marker | null = null;
 
   /** Popup instance for displaying feature information */
   private popup: Popup | null = null;
@@ -147,6 +148,21 @@ export class MapService {
           'text-halo-width': 2
         }
       });
+      this.map.addLayer({
+        id: 'poi-labels',
+        type: 'symbol',
+        source: 'pois',
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-size': 12,
+          'text-offset': [0, 1.5],
+          'text-anchor': 'top'
+        },
+        paint: {
+          'text-halo-color': '#ffffff',
+          'text-halo-width': 2
+        }
+      });
 
     } catch (error) {
       console.error('Failed to initialize map layers:', error);
@@ -182,6 +198,7 @@ export class MapService {
   private handleMapClick(e: MapMouseEvent): void {
     const coordinates: [number, number] = [e.lngLat.lng, e.lngLat.lat];
     this.clickCoordinates.set(coordinates);
+    this.showTempMarker(coordinates);
   }
 
   /**
@@ -192,6 +209,7 @@ export class MapService {
       const feature = e.features[0] as GeoJSONFeature;
       this.selectedFeature.set(feature);
       this.showFeaturePopup(e.lngLat, feature);
+      this.removeTempMarker();
     }
   }
 
@@ -260,12 +278,40 @@ export class MapService {
     `;
   }
 
+  private showTempMarker(coordinates: [number, number]): void {
+    // Remover marcador anterior si existe
+    this.removeTempMarker();
+    this.selectedFeature.set(null);
+
+    if (!this.map) return;
+    if (!this.popup) return;
+
+    this.tempMarker = new Marker({
+      color: "#ff0404ff",
+      anchor: 'center',
+      draggable: true
+    })
+      .setLngLat(coordinates)
+      .addTo(this.map);
+  }
+
+  /**
+   * Remueve el marcador temporal
+   */
+  private removeTempMarker(): void {
+    if (this.tempMarker) {
+      this.tempMarker.remove();
+      this.tempMarker = null;
+    }
+  }
+
   /**
    * Clears current selection and removes popup
    */
   public clearSelection(): void {
     this.selectedFeature.set(null);
     this.clickCoordinates.set(null);
+    this.removeTempMarker();
     this.removeExistingPopup();
   }
 

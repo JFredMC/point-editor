@@ -1,0 +1,96 @@
+<!-- point-form-modal.component.html -->
+<div class="modal fade show d-block" tabindex="-1" [class.show]="true" style="background: rgba(0,0,0,0.5)">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-primary">
+                    {{ data().mode === 'add' ? 'Add New Point' : 'Edit Point' }}
+                    {{ data().feature?.properties?.name }}
+                </h5>
+                <button type="button" class="btn-close" (click)="onCancel()"></button>
+            </div>
+            
+            <div class="modal-body">
+                <form [formGroup]="pointForm">
+                    <!-- Name Field -->
+                    <div class="form-control">
+                        <div class="mb-3">
+                            <label for="pointName" class="form-label fw-semibold">
+                                Point Name <span class="text-danger">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                [class.is-invalid]="isFieldInvalid('name')"
+                                [class.is-valid]="pointForm.get('name')?.valid"
+                                id="pointName"
+                                formControlName="name"
+                                placeholder="Enter point name"
+                            >
+                            @if (isFieldInvalid('name')) {
+                                <div class="invalid-feedback">
+                                    {{ getFieldError('name') }}
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Category Field -->
+                        <div class="mb-3">
+                            <label for="pointCategory" class="form-label fw-semibold">
+                                Category <span class="text-danger">*</span>
+                            </label>
+                            <select 
+                                class="form-select" 
+                                [class.is-invalid]="isFieldInvalid('category')"
+                                [class.is-valid]="pointForm.get('category')?.valid"
+                                id="pointCategory"
+                                formControlName="category"
+                            >
+                                <option value="">Select a category</option>
+                                @for (category of categoriesList(); track category.value) {
+                                    <option [value]="category.value">
+                                        {{ category.text | titlecase }}
+                                    </option>
+                                }
+                            </select>
+                            @if (isFieldInvalid('category')) {
+                                <div class="invalid-feedback">
+                                    {{ getFieldError('category') }}
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <!-- Coordinates Display -->
+                    @if (data().coordinates) {
+                        <div class="alert alert-info py-2">
+                            <small class="fw-semibold">
+                                <i class="bi bi-geo-alt me-2"></i>
+                                Coordinates: {{ data().coordinates![0] | number:'1.4-4' }}, 
+                                {{ data().coordinates![1] | number:'1.4-4' }}
+                            </small>
+                        </div>
+                    }
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="onCancel()"
+                >
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </button>
+                <button 
+                    type="button" 
+                    class="btn btn-primary" 
+                    (click)="onSave()"
+                    [disabled]="pointForm.invalid"
+                >
+                    <i class="bi bi-check-circle me-2"></i>
+                    {{ data().mode === 'add' ? 'Add Point' : 'Save Changes' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

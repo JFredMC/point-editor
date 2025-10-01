@@ -154,10 +154,14 @@ export class PointService {
             const validation = this.validateFeature(feature);
             
             if (validation.isValid) {
-              // Asegurar que cada feature tenga un ID único
+              const featureId = feature.id || this.generateFeatureId();
               const validFeature: GeoJSONFeature = {
                 ...feature,
-                id: feature.id || this.generateFeatureId()
+                id: featureId,
+                properties: {
+                  ...feature.properties,
+                  _featureId: featureId
+                }
               };
               validFeatures.push(validFeature);
               result.imported++;
@@ -166,7 +170,6 @@ export class PointService {
               result.errors.push(`Feature ${index}: ${validation.errors.join(', ')}`);
             }
           });
-
           this.featuresSignal.set(validFeatures);
           this.saveToLocalStorage();
           resolve(result);
@@ -201,4 +204,89 @@ export class PointService {
     localStorage.removeItem(this.storageKey);
   }
 
+  /**
+   * Adds a new feature to the signal.
+   * @param coordinates Coordinates [longitude, latitude] of the point
+   * @param properties Properties of the point (name and category)
+  */
+  public addFeature(
+    coordinates: [number, number],
+    properties: { name: string; category: string },
+  ): void {
+    const featureId = this.generateFeatureId();
+    const newFeature: GeoJSONFeature = {
+      type: 'Feature',
+      id: featureId,
+      geometry: {
+        type: 'Point',
+        coordinates: coordinates
+      },
+      properties: {
+        ...properties,
+        createdAt: new Date().toISOString(),
+        _featureId: featureId,
+      }
+    };
+
+    this.featuresSignal.update(features => [...features, newFeature]);
+    this.saveToLocalStorage();
+  }
+
+  /**
+   * Updates an existing feature.
+   * @param featureId ID of the feature to be updated
+   * @param updates Object with the updates (can be partial)
+  */
+  public updateFeature(
+    featureId: string | number,
+    updates: Partial<GeoJSONFeature>
+  ): void {
+    this.featuresSignal.update((features) => 
+      features.map(feature => 
+        feature.id === featureId 
+          ? {
+            ...feature,
+            ...updates,
+            properties: { ...feature.properties, ...updates.properties },
+          }
+          : feature
+      )
+    );
+    this.saveToLocalStorage();
+  }
+
+  /**
+   * Deletes a feature by its ID.
+   * @param featureId ID of the feature to be deleted
+  */
+  public removeFeature(
+    featureId?: string | number
+  ): void {
+    this.featuresSignal.update((features) => 
+      features.filter((feature) => feature.id !== featureId)
+    );
+    this.saveToLocalStorage();
+  }
+
+  /**
+   * Gets a feature by its ID.
+   * @param featureId ID of the feature to search for
+   * @returns The feature found or undefined
+  */
+  public getFeatureById(featureId: string): GeoJSONFeature | undefined {
+    return this.featuresSignal().find(
+      (feature) => feature.id === featureId,
+    );
+  }
+
+  /**
+   * Finds the index of a feature by its ID.
+   * @param featureId ID of the feature to search for
+   * @returns The index of the feature or -1 if not found
+  */
+  public findFeatureIndexById(featureId: string): number {
+    return this.featuresSignal().findIndex(
+      (feature) => feature.id === featureId,
+    );
+  }
 }

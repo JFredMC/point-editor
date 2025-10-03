@@ -1,8 +1,28 @@
-<div class="d-flex w-100 vh-100">
-    <div class="w-25 overflow-hidden border-end bg-light">
-        <app-import-export />
-    </div>
-    <div class="w-75 vh-100">
-        <app-map />
-    </div>
+<nav class="d-md-none navbar bg-light p-2">
+  <div class="container-fluid d-flex align-items-center">
+    <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+      <i class="bi bi-list"></i>
+    </button>
+    <span class="ms-2 fw-bold">POI Editor</span>
+  </div>
+</nav>
+
+<div class="d-flex flex-grow-1 w-100 vh-100">
+  <div class="d-none d-md-block col-md-4 col-lg-3 overflow-hidden border-end bg-light vh-100 ">
+      <app-import-export />
+  </div>
+
+  <div class="col-12 col-md-8 col-lg-9 vh-100 p-0">
+      <app-map />
+  </div>
+</div>
+
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">POI Editor</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+    <app-import-export />
+  </div>
 </div>

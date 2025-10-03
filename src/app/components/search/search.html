@@ -1,61 +1,109 @@
-<div class="search-container d-flex align-items-center bg-light rounded shadow-sm gap-2 py-2 px-3">
-    <div class="input-group input-group-sm" style="min-width: 200px;">
-        <span class="input-group-text bg-white">
-            <i class="bi bi-search"></i>
-        </span>
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Search by name..."
-          [value]="searchTerm()"
-          (input)="onSearchTermChange($event)"
-          #searchInput
-        />
-        @if (searchTerm()) {
-            <button 
-                class="btn btn-outline-secondary" 
-                type="button"
-                (click)="clearSearchTerm()"
-                title="Clear search"
-            >
-                <i class="bi bi-x"></i>
-            </button>
-        }
-    </div>
-    <div class="input-group input-group-sm" style="min-width: 180px;">
-        <span class="input-group-text bg-white">
-            <i class="bi bi-tags"></i>
-        </span>
-        <select
-          class="form-select"
-          [value]="searchCategory()"
-          (change)="onSearchCategoryChange($event)"
-          #categorySelect
-        >
-            <option value="">All categories</option>
-            @for (category of availableCategories(); track category) {
-                <option [value]="category">{{ category }}</option>
-            }
-        </select>
-        @if (searchCategory()) {
-          <button 
-            class="btn btn-outline-secondary" 
-            type="button"
-            (click)="clearSearchCategory()"
-            title="Clear category"
-          >
-            <i class="bi bi-x"></i>
-          </button>
-        }
-    </div>
+<div class="d-none d-md-flex align-items-center bg-transparent rounded shadow-0 border-0 gap-2 py-1 px-2 flex-nowrap">
+  <div class="input-group input-group-sm me-1 w-auto">
+    <span class="input-group-text bg-white p-1 bg-transparent">
+      <i class="bi bi-search"></i>
+    </span>
+    <input
+      type="text"
+      class="form-control form-control-sm py-1 bg-light"
+      placeholder="Search by name..."
+      [value]="searchTerm()"
+      (input)="onSearchTermChange($event)"
+      #searchInput
+    />
+  </div>
 
-    @if (hasActiveFilters()) {
-        <button 
-          class="btn btn-outline-secondary btn-sm"
-          (click)="clearAllFilters()"
-          title="Clear all filters"
-        >
-            <i class="bi bi-arrow-counterclockwise"></i>
-        </button>
+  <div class="input-group input-group-sm w-auto">
+    <span class="input-group-text bg-white p-1 bg-transparent">
+      <i class="bi bi-tags"></i>
+    </span>
+    <select
+      class="form-select form-select-sm w-auto bg-light"
+      [value]="searchCategory()"
+      (change)="onSearchCategoryChange($event)"
+      #categorySelect
+    >
+      <option value="">All categories</option>
+      @for (category of availableCategories(); track category) {
+        <option [value]="category">{{ category }}</option>
       }
+    </select>
+  </div>
+
+  @if (hasActiveFilters()) {
+    <button
+      class="btn btn-outline-secondary btn-sm ms-1"
+      (click)="clearAllFilters()"
+      title="Clear all filters"
+    >
+      <i class="bi bi-arrow-counterclockwise"></i>
+    </button>
+  }
+</div>
+
+<div class="d-md-none">
+  <div class="d-flex align-items-center">
+    <div class="dropdown">
+      <button
+        class="btn shadow-0 border-0 me-2 mb-2 d-flex align-items-center gap-2 py-1 px-2 py-md-2 px-md-3 btn-sm btn-md"
+        type="button"
+        id="mobileSearchDropdown"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+        title="Buscar"
+      >
+        <i class="bi bi-search"></i>
+      </button>
+
+      <div
+        class="dropdown-menu p-2 mt-1 shadow-0 rounded bg-transparent"
+        aria-labelledby="mobileSearchDropdown"
+        data-bs-auto-close="outside"
+      >
+        <div class="d-flex flex-row gap-2 align-items-center flex-nowrap" style="min-width: 240px;">
+          <div class="input-group input-group-sm flex-fill me-1">
+            <span class="input-group-text bg-white p-1">
+              <i class="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control form-control-sm py-1 "
+              placeholder="Search by name..."
+              [value]="searchTerm()"
+              (input)="onSearchTermChange($event)"
+              #searchInputMobile
+            />
+          </div>
+
+          <div class="input-group input-group-sm w-50 flex-shrink-0">
+            <span class="input-group-text bg-white p-1">
+              <i class="bi bi-tags"></i>
+            </span>
+            <select
+              class="form-select form-select-sm"
+              [value]="searchCategory()"
+              (change)="onSearchCategoryChange($event)"
+              #categorySelectMobile
+            >
+              <option value="">All categories</option>
+              @for (category of availableCategories(); track category) {
+                <option [value]="category">{{ category }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex-shrink-0">
+            @if (hasActiveFilters()) {
+              <button
+                class="btn btn-outline-secondary btn-sm"
+                (click)="clearAllFilters()"
+                title="Clear all filters"
+              >
+                <i class="bi bi-arrow-counterclockwise"></i>
+              </button>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

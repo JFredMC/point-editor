@@ -1,11 +1,11 @@
-<div #map id="map" class="d-flex flex-column h-100 rounded shadow-sm "></div>
+<div #map id="map" class="d-flex flex-column h-100 rounded shadow-sm"></div>
 
-<div class="position-absolute top-0 start-50 translate-middle-x m-3">
+<div class="position-absolute top-0 start-50 translate-middle-x my-1">
   <div class="d-flex flex-wrap align-items-center gap-2">
     <div class="d-flex flex-wrap">
       <button 
-          class="btn shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
-          [ngClass]="{'btn-primary': clickCoordinates() && !selectedFeature(), 'btn-light': !clickCoordinates() || selectedFeature()}"
+          class="btn shadow-0 border-0 me-2 mb-2 d-flex align-items-center gap-2 py-1 px-2 py-md-2 px-md-3 btn-sm btn-md"
+          [ngClass]="{'btn-primary': clickCoordinates() && !selectedFeature(), 'btn-transparent ': !clickCoordinates() || selectedFeature()}"
           (click)="showAddModal()"
           [disabled]="!clickCoordinates() || selectedFeature()"
           title="Add point at clicked location"
@@ -13,8 +13,8 @@
           <i class="bi bi-plus-circle"></i>
       </button>
       <button 
-          class="btn shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
-          [ngClass]="{'btn-info': selectedFeature(), 'btn-light': !selectedFeature()}"
+          class="btn shadow-0 border-0 me-2 mb-2 d-flex align-items-center gap-2 py-1 px-2 py-md-2 px-md-3 btn-sm btn-md"
+          [ngClass]="{'btn-info': selectedFeature(), 'btn-transparent': !selectedFeature()}"
           (click)="showEditModal()"
           [disabled]="!selectedFeature()"
           title="Edit selected point"
@@ -22,8 +22,8 @@
           <i class="bi bi-pencil"></i>
       </button>
       <button 
-          class="btn shadow me-2 mb-2 d-flex align-items-center gap-2 py-2 px-3"
-          [ngClass]="{'btn-danger': selectedFeature(), 'btn-light': !selectedFeature()}"
+          class="btn shadow-0 border-0 me-2 mb-2 d-flex align-items-center gap-2 py-1 px-2 py-md-2 px-md-3 btn-sm btn-md"
+          [ngClass]="{'btn-danger': selectedFeature(), 'btn-transparent': !selectedFeature()}"
           (click)="deletePoint()"
           [disabled]="!selectedFeature()"
           title="Delete selected point"
@@ -31,16 +31,15 @@
           <i class="bi bi-trash"></i>
       </button>
       <button 
-          class="btn shadow mb-2 d-flex align-items-center gap-2 py-2 px-3"
-          [ngClass]="{'btn-warning': selectedFeature() && clickCoordinates(), 'btn-light': !selectedFeature() || !clickCoordinates()}"
+          class="btn shadow-0 border-0 mb-2 d-flex align-items-center gap-2 py-2 px-3"
+          [ngClass]="{'btn-warning': clickCoordinates(), 'btn-transparent': !clickCoordinates()}"
           (click)="clearSelection()"
-          [disabled]="!selectedFeature() || !clickCoordinates()"
+          [disabled]="!clickCoordinates()"
           title="Clear selection"
       >
           <i class="bi bi-x-circle"></i>
       </button>
     </div>
-    
     <app-search />
   </div>
 </div>
@@ -54,9 +53,9 @@
 }
 
 <div class="position-absolute bottom-0 start-50 translate-middle-x mb-2 w-25 w-md-auto">
-  <div class="card bg-light bg-opacity-90 border-0 shadow">
-    <div class="card-body p-2 p-md-3">
-      <div class="d-flex align-items-center gap-2">
+  <div class="card bg-light bg-opacity-90 shadow">
+    <div class="card-body p-1 p-md-3">
+      <div class="d-flex align-items-center gap-1 gap-md-2">
         <small class="text-muted fw-bold">Points: {{ features().length }}</small>
         
         @if (selectedFeature()) {
@@ -76,7 +75,7 @@
 
 
 <div class="position-absolute bottom-0 end-0 m-2">
-  <div class="bg-dark bg-opacity-75 text-white px-2 py-1 rounded small">
+  <div class="bg-dark bg-opacity-75 text-white py-1 rounded small px-2">
     © <a href="https://stadiamaps.com/" target="_blank" class="text-white text-decoration-none">Stadia Maps</a> 
     © <a href="https://openmaptiles.org/" target="_blank" class="text-white text-decoration-none">OpenMapTiles</a> 
     © <a href="https://www.openstreetmap.org/copyright" target="_blank" class="text-white text-decoration-none">OpenStreetMap</a> contributors

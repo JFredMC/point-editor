@@ -1,18 +1,28 @@
 <div class="d-flex flex-column h-100">
-    <div class="box-shadow rounded p-3 bg-white">
+    <div class="box-shadow rounded p-2 p-md-3 p-lg-4 bg-white">
+        <div class="mb-3 mb-md-4">
+            <!-- Título: 3 variantes -->
+            <span class="fw-bold mb-1 d-flex align-items-center gap-2">
+                <i class="bi bi-geo-alt d-inline-block"
+                aria-hidden="true"></i>
 
-        <div class="mb-4">
-            <span class="fw-bold mb-1 fs-6">
-                <i class="bi bi-geo-alt fs-7"></i>
-                POI Map Editor
+                <!-- XS -->
+                <span class="d-inline d-md-none small">POI Map Editor</span>
+                <!-- MD -->
+                <span class="d-none d-md-inline d-lg-none fs-6">POI Map Editor</span>
+                <!-- LG -->
+                <span class="d-none d-lg-inline fs-5">POI Map Editor</span>
             </span>
-            <p class="text-muted mb-0 fs-8">
-                Manage points of interest on the map
+
+            <!-- Descripción: 3 variantes -->
+            <p class="text-muted mb-0">
+                <span class="d-inline d-md-none small">Manage points of interest</span>
+                <span class="d-none d-md-inline d-lg-none small">Manage points of interest on the map</span>
+                <span class="d-none d-lg-inline">Manage points of interest on the map</span>
             </p>
         </div>
-        <hr class="my-4">
-
-        <div class="container-fluid px-0 py-2">
+        <hr class="my-3 my-md-4">
+        <div class="container-fluid px-0 py-1 py-md-2 py-lg-3">
             <input
                 type="file"
                 #fileInput
@@ -22,55 +32,79 @@
             />
             <div class="d-flex justify-content-between flex-wrap gap-2">
                 <button
-                    class="btn btn-primary btn-sm px-4"
+                    class="btn btn-primary btn-sm py-1 px-2 py-md-2 px-md-3 py-lg-2 px-lg-2"
                     (click)="fileInput.click()"
                 >
-                    <i class="bi bi-upload"></i> Import
+                    <i class="bi bi-upload"></i>
+                    <span class="ms-1 d-inline d-md-none small">Import</span>
+                    <span class="ms-1 d-none d-md-inline d-lg-none">Import</span>
+                    <span class="ms-1 d-none d-lg-inline">Import</span>
                 </button>
+
                 <button
-                    class="btn btn-primary btn-sm px-4"
+                    class="btn btn-primary btn-sm py-1 px-2 py-md-2 px-md-3 py-lg-2 px-lg-2"
                     [disabled]="features().length === 0"
                     (click)="exportGeoJSON()"
                 >
-                    <i class="bi bi-download"></i> Export
+                    <i class="bi bi-download"></i>
+                    <span class="ms-1 d-inline d-md-none small">Export</span>
+                    <span class="ms-1 d-none d-md-inline d-lg-none">Export</span>
+                    <span class="ms-1 d-none d-lg-inline">Export</span>
                 </button>
+
                 <button
-                    class="btn btn-outline-danger btn-sm fw-bold px-4"
+                    class="btn btn-outline-danger btn-sm fw-bold py-1 px-2 py-md-2 px-md-3 py-lg-2 px-lg-2"
                     [disabled]="features().length === 0"
                     (click)="clearData()"
                 >
-                    <i class="bi bi-arrow-counterclockwise"></i> Clear
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                    <span class="ms-1 d-inline d-md-none small">Clear</span>
+                    <span class="ms-1 d-none d-md-inline d-lg-none">Clear</span>
+                    <span class="ms-1 d-none d-lg-inline">Clear</span>
                 </button>
             </div>
         </div>
-
-        <hr class="my-4">
+        <hr class="my-3 my-md-4">
     </div>
 
-    <div class="flex-grow-1 p-3 h-75 bg-white">
-        <div class="border rounded p-3 shadow-sm h-100 overflow-auto">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="fw-bold mb-0">Points of Interest</h5>
-                <span class="badge bg-secondary">{{ features().length }}</span>
+    <div class="flex-grow-1 p-2 p-md-3 p-lg-4 h-75 bg-white">
+        <div class="border rounded p-2 p-md-3 p-lg-4 shadow-sm h-100 overflow-auto">
+            <div class="d-flex justify-content-between align-items-center mb-2 mb-md-3">
+                <div>
+                    <h6 class="fw-bold mb-0 d-inline d-md-none small">Points of Interest</h6>
+                    <h5 class="fw-bold mb-0 d-none d-md-inline d-lg-none fs-6">Points of Interest</h5>
+                    <h4 class="fw-bold mb-0 d-none d-lg-inline fs-5">Points of Interest</h4>
+                </div>
+                <span class="badge bg-secondary d-flex align-items-center">
+                    <span class="d-inline d-md-none small">{{ features().length }}</span>
+                    <span class="d-none d-md-inline d-lg-none">{{ features().length }}</span>
+                    <span class="d-none d-lg-inline">{{ features().length }}</span>
+                </span>
             </div>
-
             @if(features().length === 0) {
-                <div class="text-center py-4 text-muted">
-                    <p>No points of interest yet</p>
+                <div class="text-center py-3 py-md-4 text-muted">
+                    <p class="mb-1 d-inline d-md-none small">No points yet</p>
+                    <p class="mb-1 d-none d-md-inline d-lg-none small">No points of interest yet</p>
+                    <p class="mb-1 d-none d-lg-inline">No points of interest yet</p>
                     <p class="small">Import a GeoJSON file or add points manually</p>
                 </div>
             } @else {
                 <div class="list-group">
                     @for(feature of features(); track feature.id) {
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="mb-1">{{ feature.properties.name || 'Unnamed Point' }}</h6>
+                    <div class="list-group-item d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center py-2 py-md-3">
+                        <div class="mb-2 mb-sm-0">
+                            <h6 class="mb-1 d-block d-sm-none small">{{ feature.properties.name || 'Unnamed Point' }}</h6>
+                            <h6 class="mb-1 d-none d-sm-block d-md-none small">{{ feature.properties.name || 'Unnamed Point' }}</h6>
+                            <h6 class="mb-1 d-none d-md-block d-lg-none fs-6">{{ feature.properties.name || 'Unnamed Point' }}</h6>
+                            <h5 class="mb-1 d-none d-lg-block fs-6">{{ feature.properties.name || 'Unnamed Point' }}</h5>
+
                             <p class="mb-1 small text-muted">
                                 {{ feature.geometry.coordinates[0] | number:'1.4-4' }}, 
                                 {{ feature.geometry.coordinates[1] | number:'1.4-4' }}
                             </p>
+
                             @if(feature.properties.category) {
-                                <span class="badge bg-secondary">{{ feature.properties.category }}</span>
+                                <span class="badge bg-secondary small">{{ feature.properties.category }}</span>
                             }
                         </div>
                     </div>

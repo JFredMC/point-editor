@@ -23,9 +23,7 @@
     "bootstrap-icons": "^1.13.1",
     "maplibre-gl": "^5.24.0",
     "rxjs": "~7.8.2",
-    "tslib": "^2.3.0",
-    "bootstrap": "^5.3.8",
-    "sweetalert2": "^11.23.0"
+    "tslib": "^2.3.0"
   },
   "devDependencies": {
     "@angular-eslint/builder": "22.5.0",
@@ -34,6 +32,7 @@
     "@angular/compiler-cli": "^22.2.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^24",
     "angular-eslint": "22.5.0",
     "eslint": "^10.9.1",

@@ -1,28 +1,92 @@
-<nav class="d-md-none navbar bg-light p-2">
-  <div class="container-fluid d-flex align-items-center">
-    <button class="btn btn-outline-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
-      <i class="bi bi-list"></i>
+<a class="skip" href="#panel">Saltar a la lista de puntos</a>
+
+<header class="topbar">
+  <div class="title">
+    <span class="app-icon" aria-hidden="true"><i class="bi bi-pin-map-fill"></i></span>
+    <h1>Point Editor</h1>
+  </div>
+  <app-search />
+  <div class="top-actions">
+    <button type="button" class="icon-btn" (click)="ui.helpOpen.set(true)" aria-label="Atajos de teclado" title="Atajos (?)"><i class="bi bi-keyboard"></i></button>
+    <button type="button" class="icon-btn" (click)="ui.toggleTheme()" [attr.aria-label]="ui.theme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'" title="Tema (D)">
+      <i class="bi" [class.bi-sun]="ui.theme() === 'dark'" [class.bi-moon-stars]="ui.theme() === 'light'"></i>
     </button>
-    <span class="ms-2 fw-bold">POI Editor</span>
   </div>
-</nav>
+</header>
 
-<div class="d-flex flex-grow-1 w-100 vh-100">
-  <div class="d-none d-md-block col-md-4 col-lg-3 overflow-hidden border-end bg-light vh-100 ">
-      <app-import-export />
-  </div>
+<main class="layout" [class.panel-open]="ui.panelOpen()">
+  <aside id="panel" class="panel" aria-label="Panel de puntos" tabindex="-1">
+    <button type="button" class="sheet-handle" (click)="togglePanel()" [attr.aria-expanded]="ui.panelOpen()" aria-controls="panel">
+      <span class="grip" aria-hidden="true"></span>
+      <span>{{ editing() ? (store.selected() ? 'Editando punto' : 'Nuevo punto') : 'Mis puntos (' + store.points().length + ')' }}</span>
+      <i class="bi" [class.bi-chevron-down]="ui.panelOpen()" [class.bi-chevron-up]="!ui.panelOpen()" aria-hidden="true"></i>
+    </button>
+    <div class="panel-body">
+      @if (editing()) {
+        <app-editor />
+      } @else {
+        <app-sidebar />
+      }
+    </div>
+  </aside>
 
-  <div class="col-12 col-md-8 col-lg-9 vh-100 p-0">
-      <app-map />
-  </div>
+  <section class="map-area">
+    <app-map />
+
+    <div class="toolbar" role="toolbar" aria-label="Herramientas del mapa">
+      <button type="button" class="tool" [class.on]="ui.mode() === 'add'" [attr.aria-pressed]="ui.mode() === 'add'" (click)="ui.setMode('add')" title="Agregar punto (A)"><i class="bi bi-plus-lg"></i><span>Agregar</span></button>
+      <button type="button" class="tool" [class.on]="ui.mode() === 'measure'" [attr.aria-pressed]="ui.mode() === 'measure'" (click)="ui.setMode('measure')" title="Medir distancia (M)"><i class="bi bi-rulers"></i><span>Medir</span></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="tool" (click)="locate()" title="Mi ubicación (L)" aria-label="Ir a mi ubicación"><i class="bi bi-crosshair"></i></button>
+      <button type="button" class="tool" (click)="fit()" title="Encuadrar puntos (F)" aria-label="Encuadrar todos los puntos"><i class="bi bi-fullscreen"></i></button>
+      <span class="sep" aria-hidden="true"></span>
+      <button type="button" class="tool" (click)="undo()" [disabled]="!store.canUndo()" title="Deshacer (Ctrl+Z)" aria-label="Deshacer"><i class="bi bi-arrow-counterclockwise"></i></button>
+      <button type="button" class="tool" (click)="redo()" [disabled]="!store.canRedo()" title="Rehacer (Ctrl+Shift+Z)" aria-label="Rehacer"><i class="bi bi-arrow-clockwise"></i></button>
+    </div>
+
+    @if (ui.mode() === 'add') {
+      <div class="mode-banner" role="status"><i class="bi bi-hand-index"></i> Haz clic en el mapa para colocar el punto <button type="button" class="link" (click)="ui.setMode('add')">Salir</button></div>
+    }
+    @if (ui.mode() === 'measure') {
+      <div class="mode-banner measure" role="status" aria-live="polite">
+        <i class="bi bi-rulers"></i>
+        @if (ui.measurePath().length < 2) {
+          <span>Haz clic en el mapa para trazar la distancia</span>
+        } @else {
+          <span>Distancia: <strong data-testid="measure-total">{{ measureLabel() }}</strong> · {{ ui.measurePath().length }} puntos</span>
+        }
+        <button type="button" class="link" (click)="undoMeasure()" [disabled]="!ui.measurePath().length">Quitar último</button>
+        <button type="button" class="link" (click)="ui.measurePath.set([])" [disabled]="!ui.measurePath().length">Limpiar</button>
+        <button type="button" class="link" (click)="ui.setMode('measure')">Salir</button>
+      </div>
+    }
+  </section>
+</main>
+
+<div class="toasts" aria-live="polite" aria-atomic="false">
+  @for (t of ui.toasts(); track t.id) {
+    <div class="toast" [class]="'toast ' + t.kind" role="status">
+      <span>{{ t.text }}</span>
+      @if (t.action; as a) {
+        <button type="button" class="link" (click)="a.run(); ui.dismiss(t.id)">{{ a.label }}</button>
+      }
+      <button type="button" class="icon-btn sm" (click)="ui.dismiss(t.id)" aria-label="Cerrar aviso"><i class="bi bi-x"></i></button>
+    </div>
+  }
 </div>
 
-<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
-  <div class="offcanvas-header">
-    <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">POI Editor</h5>
-    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+@if (ui.helpOpen()) {
+  <div class="backdrop" (click)="ui.helpOpen.set(false)" aria-hidden="true"></div>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <header>
+      <h2 id="help-title">Atajos de teclado</h2>
+      <button type="button" class="icon-btn" (click)="ui.helpOpen.set(false)" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
+    </header>
+    <dl class="shortcuts">
+      @for (s of shortcuts; track s[0]) {
+        <div><dt><kbd>{{ isMac ? s[0].replace('Ctrl', '⌘') : s[0] }}</kbd></dt><dd>{{ s[1] }}</dd></div>
+      }
+    </dl>
+    <p class="muted small">Tus puntos se guardan solo en este navegador. Exporta un GeoJSON o CSV para respaldarlos.</p>
   </div>
-  <div class="offcanvas-body">
-    <app-import-export />
-  </div>
-</div>
+}

@@ -1,345 +1,302 @@
-import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-import maplibregl, { GeoJSONSource, Map, MapMouseEvent, Marker, NavigationControl, Popup } from 'maplibre-gl';
-import { PointService } from './point.service';
-import { GeoJSONFeature } from '../types/geojson';
-import { MapConfig } from '../types/map';
+import type * as GeoJSON from 'geojson';
+import { effect, inject, Injectable } from '@angular/core';
+import maplibregl, { GeoJSONSource, LngLatBounds, Map as MlMap, MapMouseEvent, Marker } from 'maplibre-gl';
+import { LngLat, MapPoint } from '../core/models';
+import { PointsStore } from './points.store';
+import { Theme, UiService } from './ui.service';
 
-/**
- * Default map configuration
- */
-const default_map_config: MapConfig = {
-  center: [-70.6483, -33.4569],
-  zoom: 2,
-  style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+export const STYLES: Record<Theme, string> = {
+  dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+  light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
 };
-@Injectable({
-  providedIn: 'root'
-})
+const FONT = ['Montserrat Medium', 'Open Sans Bold'];
+const DEFAULT_VIEW = { center: [-74.08, 4.6] as LngLat, zoom: 4.6 };
+
+function pinElement(color: string, label: string): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'pin';
+  el.setAttribute('aria-label', label);
+  el.style.setProperty('--pin', color);
+  el.innerHTML = '<span class="pin-dot"></span>';
+  return el;
+}
+
+/** Owns the MapLibre instance; renders store state as layers (clustered points, measure path). */
+@Injectable({ providedIn: 'root' })
 export class MapService {
-  // Services
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly pointService = inject(PointService);
-
-  /** Main MapLibre GL map instance */
-  private map: Map | undefined;
-  private tempMarker: Marker | null = null;
-
-  /** Popup instance for displaying feature information */
-  private popup: Popup | null = null;
-
-  // Signals
-  public readonly selectedFeature = signal<GeoJSONFeature | null>(null);
-  public readonly clickCoordinates = signal<[number, number] | null>(null);
-  private readonly currentFeatures = computed(() => this.pointService.filteredFeatures());
-  private readonly features = computed(() => this.pointService.features());
+  private readonly store = inject(PointsStore);
+  private readonly ui = inject(UiService);
+  private map?: MlMap;
+  private editMarker?: Marker;
+  private editMarkerFor: string | null = null;
+  private userMarker?: Marker;
+  private currentTheme?: Theme;
+  ready = false;
 
   constructor() {
-     effect(() => {
-      if (this.map) {
-        this.updateMapFeatures(this.currentFeatures());
+    effect(() => {
+      const pts = this.store.filtered();
+      const sel = this.store.selectedId();
+      this.render(pts, sel);
+    });
+    effect(() => this.renderMeasure(this.ui.measurePath()));
+    effect(() => this.syncEditMarker(this.store.selected(), this.ui.draft()));
+    effect(() => {
+      const theme = this.ui.theme();
+      if (this.map && this.currentTheme !== theme) {
+        this.currentTheme = theme;
+        this.map.setStyle(STYLES[theme]);
       }
+    });
+    effect(() => {
+      const mode = this.ui.mode();
+      const canvas = this.map?.getCanvas();
+      if (canvas) canvas.style.cursor = mode === 'browse' ? '' : 'crosshair';
     });
   }
 
-  /**
-   * Initializes and configures the MapLibre GL map instance
-   * 
-   * @param container - HTML element that will contain the map
-   * @param config - Optional configuration to override default map settings
-   * @throws {Error} If container element is invalid
-   * 
-   */
-  public initializeMap(
-    container: HTMLElement,
-    config: Partial<MapConfig> = {}
-  ): void {
-    if (this.map) {
-      console.warn('Map is already initialized');
-      return;
-    }
-
-    if (!container) {
-      throw new Error('Container element is required for map initialization');
-    }
-
-    const finalConfig = { ...default_map_config, ...config };
-
-    this.map = new Map({
+  init(container: HTMLElement): void {
+    if (this.map) return;
+    this.currentTheme = this.ui.theme();
+    const points = this.store.points();
+    this.map = new maplibregl.Map({
       container,
-      style: finalConfig.style,
-      center: finalConfig.center,
-      zoom: finalConfig.zoom,
-      attributionControl: false,
+      style: STYLES[this.currentTheme],
+      center: DEFAULT_VIEW.center,
+      zoom: DEFAULT_VIEW.zoom,
+      attributionControl: { compact: true },
+      dragRotate: false,
+      pitchWithRotate: false,
+      cooperativeGestures: false,
     });
-
-    this.setupMapControls();
-    this.setupMapEventHandlers();
-  }
-
-
-  /**
-   * Sets up map controls and initializes layers once map is loaded
-   */
-  private setupMapControls(): void {
-    if (!this.map) return;
-
-    this.map.addControl(new NavigationControl());
-
-    this.map.on('load', () => {
-      this.initializeLayers();
-      this.setupEventListeners();
-     this.updateMapFeatures(this.currentFeatures());
+    this.map.touchZoomRotate.disableRotation();
+    this.map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+    this.map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+    this.map.on('style.load', () => {
+      this.addLayers();
+      this.ready = true;
+      this.render(this.store.filtered(), this.store.selectedId());
+      this.renderMeasure(this.ui.measurePath());
     });
-  }
-
-  /**
-   * Sets up global map event handlers
-   */
-  private setupMapEventHandlers(): void {
-    if (!this.map) return;
-
-    // Handle map destruction when component is destroyed
-    this.destroyRef.onDestroy(() => {
-      this.destroyMap();
-    });
-  }
-
-  /**
-   * Initializes GeoJSON sources and layers for Points of Interest
-   */
-  private initializeLayers(): void {
-    if (!this.map) return;
-
-    try {
-      this.map.addSource('pois', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: []
-        }
-      });
-
-      this.map.addLayer({
-        id: 'poi-circles',
-        type: 'circle',
-        source: 'pois',
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#007bff',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
-        }
-      });
-
-
-      this.map.addLayer({
-        id: 'poi-labels',
-        type: 'symbol',
-        source: 'pois',
-        layout: {
-          'text-field': ['get', 'name'],
-          'text-size': 12,
-          'text-offset': [0, 1.5],
-          'text-anchor': 'top'
-        },
-        paint: {
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 2
-        }
-      });
-    } catch (error) {
-      console.error('Failed to initialize map layers:', error);
+    this.map.on('click', (e) => this.onClick(e));
+    for (const layer of ['points', 'clusters']) {
+      this.map.on('mouseenter', layer, () => this.setCursor('pointer'));
+      this.map.on('mouseleave', layer, () => this.setCursor(this.ui.mode() === 'browse' ? '' : 'crosshair'));
     }
+    if (points.length) this.map.once('load', () => this.fit(points, false));
+    // expose for e2e tests
+    (window as unknown as { __pointEditorMap?: MlMap }).__pointEditorMap = this.map;
   }
 
-  /**
-   * Sets up event listeners for map interactions
-   */
-  private setupEventListeners(): void {
-    if (!this.map) return;
+  destroy(): void {
+    this.map?.remove();
+    this.map = undefined;
+    this.ready = false;
+  }
 
-    this.map.on('click', (e: MapMouseEvent) => {
-      this.handleMapClick(e);
+  private setCursor(c: string): void {
+    if (this.map) this.map.getCanvas().style.cursor = c;
+  }
+
+  private addLayers(): void {
+    const map = this.map!;
+    map.addSource('points', { type: 'geojson', data: this.collection([]), cluster: true, clusterRadius: 48, clusterMaxZoom: 13 });
+    map.addSource('measure', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    const dark = this.currentTheme === 'dark';
+    map.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'points',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': ['step', ['get', 'point_count'], '#22d3ee', 10, '#818cf8', 50, '#6366f1'],
+        'circle-radius': ['step', ['get', 'point_count'], 17, 10, 22, 50, 28],
+        'circle-opacity': 0.88,
+        'circle-stroke-width': 4,
+        'circle-stroke-color': dark ? 'rgba(34,211,238,0.25)' : 'rgba(99,102,241,0.25)',
+      },
     });
-
-    this.map.on('click', 'poi-circles', (e) => {
-      this.handleFeatureClick(e);
+    map.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'points',
+      filter: ['has', 'point_count'],
+      layout: { 'text-field': ['get', 'point_count_abbreviated'], 'text-font': FONT, 'text-size': 13 },
+      paint: { 'text-color': '#070d18' },
     });
-
-    this.map.on('mouseenter', 'poi-circles', () => {
-      this.setCursor('pointer');
+    map.addLayer({
+      id: 'points',
+      type: 'circle',
+      source: 'points',
+      filter: ['all', ['!', ['has', 'point_count']], ['!=', ['get', 'selected'], true]],
+      paint: {
+        'circle-color': ['get', 'color'],
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 3, 6, 14, 9],
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': dark ? '#070d18' : '#ffffff',
+      },
     });
-
-    this.map.on('mouseleave', 'poi-circles', () => {
-      this.setCursor('');
+    map.addLayer({
+      id: 'point-labels',
+      type: 'symbol',
+      source: 'points',
+      filter: ['!', ['has', 'point_count']],
+      minzoom: 5,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': FONT,
+        'text-size': 12,
+        'text-offset': [0, 1.3],
+        'text-anchor': 'top',
+        'text-max-width': 10,
+        'text-optional': true,
+      },
+      paint: {
+        'text-color': dark ? '#eef3fb' : '#10192b',
+        'text-halo-color': dark ? '#070d18' : '#ffffff',
+        'text-halo-width': 1.6,
+      },
+    });
+    map.addLayer({
+      id: 'measure-line',
+      type: 'line',
+      source: 'measure',
+      filter: ['==', ['geometry-type'], 'LineString'],
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#fbbf24', 'line-width': 3, 'line-dasharray': [2, 1.5] },
+    });
+    map.addLayer({
+      id: 'measure-points',
+      type: 'circle',
+      source: 'measure',
+      filter: ['==', ['geometry-type'], 'Point'],
+      paint: { 'circle-color': '#fbbf24', 'circle-radius': 5, 'circle-stroke-width': 2, 'circle-stroke-color': '#070d18' },
     });
   }
 
-  /**
-   * Handles map click events for setting coordinates
-   */
-  private handleMapClick(e: MapMouseEvent): void {
-    const coordinates: [number, number] = [e.lngLat.lng, e.lngLat.lat];
-    this.clickCoordinates.set(coordinates);
-    this.showTempMarker(coordinates);
-  }
-
-  /**
-   * Handles feature click events for selection and popup display
-   */
-  private handleFeatureClick(e: any): void {
-    if (e.features?.[0]) {
-      const feature = e.features[0] as GeoJSONFeature;
-      this.selectedFeature.set(feature);
-      this.showFeaturePopup(e.lngLat, feature);
-      this.removeTempMarker();
-    }
-  }
-
-  /**
-   * Sets the canvas cursor style
-   */
-  private setCursor(cursor: string): void {
-    this.map?.getCanvas().style?.setProperty('cursor', cursor);
-  }
-
-  /**
-   * Updates map features in the GeoJSON source
-   */
-  public updateMapFeatures(features: GeoJSONFeature[]): void {
-    if (!this.map) return;
-
-    const source = this.map.getSource('pois') as GeoJSONSource;
-    if (source) {
-      source.setData({
-        type: 'FeatureCollection',
-        features: features
-      });
-    }
-  }
-
-  /**
-   * Displays a popup with feature information at specified coordinates
-   */
-  private showFeaturePopup(lngLat: any, feature: GeoJSONFeature): void {
-    if (!this.map) return;
-
-    this.removeExistingPopup();
-
-    const { properties } = feature;
-    const coordinates = this.clickCoordinates();
-
-    this.popup = new Popup()
-      .setLngLat(lngLat)
-      .setHTML(this.generatePopupContent(properties, coordinates))
-      .addTo(this.map);
-  }
-
-  /**
-   * Removes existing popup from the map
-   */
-  private removeExistingPopup(): void {
-    this.popup?.remove();
-    this.popup = null;
-  }
-
-  /**
-   * Generates HTML content for the feature popup
-   */
-  private generatePopupContent(properties: any, coordinates: [number, number] | null): string {
-    return `
-      <div class="p-2">
-        <h6>${properties['name'] || 'Unnamed'}</h6>
-        <p class="mb-1"><strong>Category:</strong> ${properties['category'] || 'Unknown'}</p>
-        ${coordinates ? `
-          <p class="mb-1"><strong>Coordinates:</strong>
-            ${coordinates[0].toFixed(6)}, ${coordinates[1].toFixed(6)}
-          </p>
-        ` : ''}
-        <small class="text-muted">Click elsewhere to close</small>
-      </div>
-    `;
-  }
-
-  private showTempMarker(coordinates: [number, number]): void {
-    this.removeTempMarker();
-    this.selectedFeature.set(null);
-    if (!this.map) return;
-    if (this.popup) {
-      this.removeExistingPopup();
+  private collection(points: MapPoint[], selected: string | null = null): GeoJSON.FeatureCollection {
+    return {
+      type: 'FeatureCollection',
+      features: points.map((p) => ({
+        type: 'Feature',
+        id: undefined,
+        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+        properties: { id: p.id, name: p.name, color: p.color, selected: p.id === selected },
+      })),
     };
-
-    this.tempMarker = new Marker({
-      color: "blue",
-      anchor: 'center',
-      draggable: true
-    })
-      .setLngLat(coordinates)
-      .addTo(this.map);
   }
 
-  /**
-   * Remueve el marcador temporal
-   */
-  private removeTempMarker(): void {
-    if (this.tempMarker) {
-      this.tempMarker.remove();
-      this.tempMarker = null;
-    }
+  private render(points: MapPoint[], selected: string | null): void {
+    if (!this.ready) return;
+    (this.map?.getSource('points') as GeoJSONSource | undefined)?.setData(this.collection(points, selected));
   }
 
-  /**
-   * Clears current selection and removes popup
-   */
-  public clearSelection(): void {
-    this.selectedFeature.set(null);
-    this.clickCoordinates.set(null);
-    this.removeTempMarker();
-    this.removeExistingPopup();
+  private renderMeasure(path: LngLat[]): void {
+    if (!this.ready) return;
+    const features: GeoJSON.Feature[] = path.map((c) => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: c } }));
+    if (path.length > 1) features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: path } });
+    (this.map?.getSource('measure') as GeoJSONSource | undefined)?.setData({ type: 'FeatureCollection', features });
   }
 
-  /**
-   * Returns the current map instance
-   * 
-   * @returns Current Map instance or undefined if not initialized
-   */
-  public getMap(): Map | undefined {
-    return this.map;
-  }
-
-  /**
-   * Safely destroys the map instance and cleans up resources
-   */
-  public destroyMap(): void {
-    this.clearSelection();
-    
-    if (this.map) {
-      this.map.remove();
-      this.map = undefined;
-    }
-  }
-
-  /**
-   * Centers the map view to fit all the provided features.
-   * @param features - An array of GeoJSON features to fit the map to.
-  */
-  public fitToFeatures(features: GeoJSONFeature[]): void {
-    if (!this.map || features.length === 0) {
+  /** One draggable marker for the selected point or the draft being placed. */
+  private syncEditMarker(selected: MapPoint | null, draft: { lng: number; lat: number } | null): void {
+    if (!this.map) return;
+    const target = selected ? { key: selected.id, lng: selected.lng, lat: selected.lat, color: selected.color, label: selected.name } : draft ? { key: 'draft', lng: draft.lng, lat: draft.lat, color: '#22d3ee', label: 'Nuevo punto' } : null;
+    if (!target) {
+      this.editMarker?.remove();
+      this.editMarker = undefined;
+      this.editMarkerFor = null;
       return;
     }
-
-    const bounds = new maplibregl.LngLatBounds();
-
-    features.forEach(feature => {
-      if (feature.geometry.type === 'Point') {
-        const coordinates = feature.geometry.coordinates as [number, number];
-        bounds.extend(coordinates);
+    if (this.editMarker && this.editMarkerFor === target.key) {
+      this.editMarker.setLngLat([target.lng, target.lat]);
+      this.editMarker.getElement().style.setProperty('--pin', target.color);
+      return;
+    }
+    this.editMarker?.remove();
+    this.editMarkerFor = target.key;
+    const el = pinElement(target.color, `${target.label}: arrastra para mover`);
+    this.editMarker = new maplibregl.Marker({ element: el, draggable: true, anchor: 'bottom' }).setLngLat([target.lng, target.lat]).addTo(this.map);
+    this.editMarker.on('dragend', () => {
+      const { lng, lat } = this.editMarker!.getLngLat();
+      if (this.editMarkerFor === 'draft') this.ui.draft.update((d) => (d ? { ...d, lng, lat } : d));
+      else if (this.editMarkerFor) {
+        this.store.update(this.editMarkerFor, { lng, lat });
+        this.ui.toast('Punto movido', 'success', { label: 'Deshacer', run: () => this.store.undo() });
       }
     });
+  }
 
-    this.map.fitBounds(bounds, {
-      padding: features.length === this.features().length ? 450 : 100,
-      duration: 1000,
+  private onClick(e: MapMouseEvent): void {
+    const map = this.map!;
+    const mode = this.ui.mode();
+    const lngLat: LngLat = [e.lngLat.lng, e.lngLat.lat];
+    if (mode === 'measure') {
+      this.ui.measurePath.update((p) => [...p, lngLat]);
+      return;
+    }
+    const hits = map.queryRenderedFeatures(e.point, { layers: ['clusters', 'points'] });
+    const hit = hits[0];
+    if (hit?.layer.id === 'clusters') {
+      const source = map.getSource('points') as GeoJSONSource;
+      const clusterId = hit.properties['cluster_id'] as number;
+      source.getClusterExpansionZoom(clusterId).then((zoom) => {
+        map.easeTo({ center: (hit.geometry as GeoJSON.Point).coordinates as LngLat, zoom: zoom + 0.5 });
+      });
+      return;
+    }
+    if (hit?.layer.id === 'points') {
+      this.ui.draft.set(null);
+      this.store.selectedId.set(hit.properties['id'] as string);
+      return;
+    }
+    if (mode === 'add' || (!this.store.selectedId() && !this.ui.draft())) {
+      this.store.selectedId.set(null);
+      this.ui.draft.set({ lng: lngLat[0], lat: lngLat[1] });
+      this.ui.panelOpen.set(true);
+      return;
+    }
+    this.store.selectedId.set(null);
+    this.ui.draft.set(null);
+  }
+
+  flyTo(lng: number, lat: number, zoom = 15): void {
+    this.map?.flyTo({ center: [lng, lat], zoom: Math.max(zoom, this.map.getZoom()), speed: 1.6, essential: true });
+  }
+
+  fitBbox(bbox: [number, number, number, number]): void {
+    this.map?.fitBounds(bbox, { padding: 60, maxZoom: 16, duration: 900 });
+  }
+
+  fit(points: MapPoint[] = this.store.filtered(), animate = true): void {
+    if (!this.map || !points.length) return;
+    if (points.length === 1) return this.flyTo(points[0].lng, points[0].lat, 14);
+    const b = new LngLatBounds();
+    points.forEach((p) => b.extend([p.lng, p.lat]));
+    const mobile = window.innerWidth < 768;
+    this.map.fitBounds(b, {
+      padding: mobile ? { top: 90, bottom: 60, left: 40, right: 40 } : { top: 90, bottom: 60, left: 60, right: 60 },
+      maxZoom: 15,
+      duration: animate ? 900 : 0,
     });
+  }
+
+  center(): LngLat {
+    const c = this.map?.getCenter();
+    return c ? [c.lng, c.lat] : DEFAULT_VIEW.center;
+  }
+
+  showUser(lng: number, lat: number): void {
+    if (!this.map) return;
+    this.userMarker?.remove();
+    const el = document.createElement('div');
+    el.className = 'user-dot';
+    el.setAttribute('aria-label', 'Tu ubicación');
+    this.userMarker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(this.map);
+    this.flyTo(lng, lat, 15);
+  }
+
+  resize(): void {
+    this.map?.resize();
   }
 }

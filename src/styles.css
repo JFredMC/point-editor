@@ -153,6 +153,31 @@ app-root {
   align-items: center;
 }
 
+/* Brand (discreet) */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px 0 8px;
+  margin-right: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.brand strong {
+  font-family: Sora, Inter, sans-serif;
+  font-weight: 600;
+  color: var(--text);
+}
+.brand:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
 /* Search */
 .search-wrap {
   position: relative;
@@ -908,6 +933,12 @@ app-map,
     bottom: 56px;
   }
   kbd.hint {
+    display: none;
+  }
+  .brand {
+    padding: 0 8px;
+  }
+  .brand span {
     display: none;
   }
 }

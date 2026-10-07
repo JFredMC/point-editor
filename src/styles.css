@@ -924,6 +924,15 @@ app-map,
   }
   .mode-banner {
     top: 62px;
+    width: max-content;
+    font-size: 13px;
+  }
+  .list-head h2 {
+    display: none;
+  }
+  .list-head {
+    justify-content: flex-end;
+    margin-top: -8px;
   }
   .toasts {
     bottom: 70px;

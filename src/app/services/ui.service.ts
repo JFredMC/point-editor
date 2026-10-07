@@ -58,7 +58,7 @@ export class UiService {
     const next = this.mode() === mode ? 'browse' : mode;
     this.mode.set(next);
     if (next !== 'measure') this.measurePath.set([]);
-    if (next === 'measure') this.draft.set(null);
+    if (next !== 'browse' && window.innerWidth < 768) this.panelOpen.set(false);
   }
 
   toast(text: string, kind: Toast['kind'] = 'info', action?: Toast['action']): void {

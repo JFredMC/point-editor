@@ -9,7 +9,7 @@ import { UiService } from '../services/ui.service';
   selector: 'app-editor',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <form class="editor" (submit)="save($event)" aria-labelledby="editor-title">
+    <form class="editor" novalidate (submit)="save($event)" aria-labelledby="editor-title">
       <header class="editor-head">
         <button type="button" class="icon-btn" (click)="cancel()" aria-label="Volver a la lista"><i class="bi bi-arrow-left"></i></button>
         <h2 id="editor-title">{{ isNew() ? 'Nuevo punto' : 'Editar punto' }}</h2>

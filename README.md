@@ -1,114 +1,93 @@
-# POINT Editor
-A basic POI (Point of Interest) editor on a map using Angular 20, TypeScript, and MapLibre GL JS.
+# Point Editor
 
-## 🌟 Features
+Editor de puntos de interés sobre un mapa, hecho con **Angular 22** y **MapLibre GL**. Funciona completo en el navegador: no necesita servidor, cuentas ni API keys.
 
-- POI Management: Create, edit, delete, and visualize points on the map
-- Smart Search: Real-time filtering by name and category
-- Import/Export: GeoJSON file support
-- Local Persistence: Automatic localStorage saving
-- Responsive Design: Bootstrap-based adaptive interface
+**Demo en vivo:** https://jfredmc.github.io/point-editor/
 
-## 📋 Environment Requirements
-- Node.js: v22.15.1 or higher
-- Angular CLI: v20.3.3
-- Yarn: v1.22.22
-- Browser: ES2022 and WebGL compatible
+![Point Editor en escritorio, tema oscuro](docs/screenshots/desktop-dark-puntos.png)
 
-## 🚀 Installation & Development
-1. Clone the repository: `git clone https://github.com/JFredMC/point-editor.git`
-2. Access the project directory: `cd point-editor`
-3. Install dependencies: `yarn install`
-4. Run the application: `ng serve`
-5. Open in browser: `http://localhost:4200`
-  
-## 🏗️ Architecture Decisions
+## Qué puedes hacer
 
-    1. Framework & Technologies
-        - Angular 20: Chosen for its robust ecosystem, strong typing, and excellent tooling
-        - Zoneless: Implemented without Zone.js for better performance and granular change detection control
-        - Signals: Extensive use of Angular Signals for reactive state management
-        - MapLibre GL JS: Open-source alternative to Mapbox GL JS with excellent performance and compatibility
+- **Agregar puntos** con un clic en el mapa (o con el modo «Agregar»), con nombre, descripción, categoría y color.
+- **Editar, mover y eliminar**: el punto seleccionado se arrastra en el mapa para cambiar su ubicación.
+- **Deshacer y rehacer** cualquier cambio (Ctrl + Z / Ctrl + Shift + Z), también desde los avisos.
+- **Buscar lugares** por nombre o dirección con OpenStreetMap Nominatim y agregarlos como punto.
+- **Lista con filtros** por texto (sin importar tildes) y por categoría.
+- **Mi ubicación**: centra el mapa en ti y ordena la lista por cercanía.
+- **Medir distancias** trazando una ruta de varios tramos.
+- **Clusters** para manejar muchos puntos sin saturar el mapa.
+- **Importar y exportar** GeoJSON y CSV (detecta `,` o `;`, encabezados en español y comas decimales).
+- **Se guarda solo** en `localStorage`; los datos del formato anterior se migran automáticamente.
+- **Tema oscuro y claro**, diseño responsive con panel inferior en móvil y **atajos de teclado** (pulsa `?`).
 
-    2. Design Patterns
+| Editar un punto | Medir distancias | Móvil |
+| --- | --- | --- |
+| ![Editar](docs/screenshots/desktop-dark-editar.png) | ![Medir](docs/screenshots/desktop-dark-medir.png) | ![Móvil](docs/screenshots/mobile-dark-puntos.png) |
 
-        - Reactive Services: Centralized state management using services with Signals
-        - Component Composition: Modular architecture with reusable components
-        - Separation of Concerns:
-        - PointService: Data management and business logic
-        - MapService: Map interaction control
-        - Components: User presentation and interaction
+![Tema claro](docs/screenshots/desktop-light-puntos.png)
 
-    3. State Management
-    - Reactive state using Signals
-        private featuresSignal = signal<GeoJSONFeature[]>([]);
-        public filteredFeatures = computed(() => {});
+## Atajos de teclado
 
-## ✅ Current Architecture Advantages
-    - Performance: Signals + Zoneless provides efficient updates
-    - Type Safety: TypeScript throughout the project for reliability
-    - Maintainability: Well-structured, easily extensible code
-    - User Experience: Responsive interface with real-time search
+| Tecla | Acción |
+| --- | --- |
+| `A` | Modo agregar punto |
+| `N` | Nuevo punto en el centro del mapa |
+| `M` | Medir distancias |
+| `L` | Ir a mi ubicación |
+| `F` | Encuadrar todos los puntos |
+| `/` | Buscar un lugar |
+| `D` | Cambiar tema |
+| `Ctrl + Z` / `Ctrl + Shift + Z` | Deshacer / rehacer |
+| `Supr` | Eliminar el punto seleccionado |
+| `Esc` | Cancelar o cerrar |
 
-## ⚠️ Accepted Compromises
-    1. Local Persistence:
+## Formato de archivos
 
-        - Advantage: Simplicity and offline functionality
-        - Disadvantage: Limited by browser storage size
+**GeoJSON**: un `FeatureCollection` con geometrías `Point`. Se leen las propiedades `name`/`nombre`, `description`/`descripcion`, `category`/`categoria` y `color` (hex). Los elementos que no son puntos o tienen coordenadas inválidas se descartan y se informa cuántos.
 
-    2. MapLibre Dependency:
+**CSV**: necesita columnas de latitud y longitud (`lat`/`latitud` y `lng`/`lon`/`longitud`). Ejemplo:
 
-    - Advantage: Open-source and powerful
-    - Disadvantage: Learning curve for advanced extensions
+```csv
+name,description,category,color,lat,lng
+Museo del Oro,Orfebrería prehispánica,Museo,#fbbf24,4.60188,-74.07206
+```
 
-## 🚧 Known Limitations
-    1. Current
-        - File Size: Limited by browser memory for very large GeoJSON files
-        - Custom Icons: Basic category icon implementation
-        - Label Collisions: Map labels may overlap at low zoom levels
-        - Basic Validation: GeoJSON validation limited to basic structure
+La exportación a CSV protege las celdas contra inyección de fórmulas en hojas de cálculo.
 
-    2. Technical
-        - Maximum ~10,000 points for optimal performance
-        - Requires WebGL enabled in browser
-        - Internet connection required for map tiles
+## Stack y decisiones
 
-## 🔮 Potential Future Improvements
-    1. High Priority
+- **Angular 22** con componentes standalone, signals y `OnPush`, sin zone.js.
+- **MapLibre GL 5** con mapas base gratuitos de **CARTO** (Positron y Dark Matter) sobre datos de © OpenStreetMap. No se usa ninguna API key.
+- **Búsqueda** con [Nominatim](https://operations.osmfoundation.org/policies/nominatim/) respetando su política de uso: solo se busca al pulsar Enter (sin autocompletar), máximo una petición por segundo, resultados en caché y atribución visible.
+- Estado en un store con signals (`PointsStore`) con historial de deshacer basado en instantáneas.
+- Sin Bootstrap ni librerías de UI: CSS propio con variables para los dos temas.
 
-        - Backend Integration: REST API for server persistence
-        - Real-time Collaboration: WebSockets for collaborative editing
+```
+src/app/
+  core/         # lógica pura: geo (distancias), io (GeoJSON/CSV), historial, ejemplos
+  services/     # PointsStore, MapService (MapLibre), GeocodingService, UiService
+  components/   # mapa, panel lateral, editor, búsqueda
+```
 
-    2. Medium Priority
+## Desarrollo
 
-        - Additional Formats: Support for KML, GPX, Shapefile
-        - Advanced Styling: Complete map style customization
-        - Plugin System: Extensible architecture for custom features
+Requiere Node 22.
 
-    3. Low Priority
-        - Change History: Undo/redo system
-        - Image Export: Map capture as PNG/PDF
-        - Spatial Analysis: Measurement and analysis tools
+```bash
+yarn install
+yarn start          # http://localhost:4200
+yarn test           # pruebas unitarias (Vitest)
+yarn lint
+yarn build:pages    # build como en GitHub Pages (/point-editor/)
+yarn e2e            # pruebas e2e con Playwright (escritorio y móvil)
+E2E_BASE_URL=https://jfredmc.github.io/point-editor/ yarn e2e   # contra el sitio en vivo
+```
 
-## 🗂️ Project Structure
-    src/
-    ├── app/
-    │   ├── components/
-    │   │   ├── map/           # Main map component
-    │   │   ├── import-export/ # File management
-    │   │   └── search/        # Search and filtering
-    │   ├── services/
-    │   │   ├── point.service.ts    # Data management
-    │   │   └── map.service.ts      # Map control
-    │   │   └── sweet-alert.service.ts      # Alerts management
-    │   └── types/
-    │       └── geojson.ts     # geojson types
-    │       └── map.ts         # map types
-    │       └── search.ts     # search types
-    │       └── select.ts     # select types
-    🤝 Contributing
-    Fork the project
+## CI y despliegue
 
+- Cada PR pasa lint, typecheck, pruebas unitarias, build y la suite e2e en Chromium de escritorio y móvil.
+- Cada push a `main` publica el sitio en GitHub Pages.
 
-## 📄 License
-Distributed under the MIT License. See LICENSE for more information.
+---
+
+Hecho por [JFredDev](https://jfredmc.github.io/portfolio/).

@@ -40,6 +40,14 @@ export class App {
   protected readonly measureLabel = computed(() => formatDistance(this.ui.measureTotal()));
   protected readonly isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
+  setMode(mode: 'add' | 'measure'): void {
+    if (mode === 'measure') {
+      this.store.selectedId.set(null);
+      this.ui.draft.set(null);
+    }
+    this.ui.setMode(mode);
+  }
+
   constructor() {
     effect(() => {
       if (this.store.selected()) this.ui.panelOpen.set(true);
@@ -150,7 +158,7 @@ export class App {
         break;
       case 'm':
       case 'M':
-        this.ui.setMode('measure');
+        this.setMode('measure');
         break;
       case 'l':
       case 'L':

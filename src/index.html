@@ -1,13 +1,26 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>PointEditor</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-</head>
-<body>
-  <app-root></app-root>
-</body>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <title>Point Editor · Editor de puntos en el mapa</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Crea, edita y organiza puntos de interés sobre un mapa. Importa y exporta GeoJSON y CSV, mide distancias y busca lugares." />
+    <meta name="theme-color" content="#070d18" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet" />
+    <script>
+      try {
+        var t = localStorage.getItem('point-editor:theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <app-root></app-root>
+    <noscript>Point Editor necesita JavaScript para funcionar.</noscript>
+  </body>
 </html>

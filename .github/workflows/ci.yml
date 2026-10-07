@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Typecheck & build
+    name: Lint, typecheck & build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,5 +22,6 @@ jobs:
           node-version: 22
           cache: yarn
       - run: yarn install --frozen-lockfile
+      - run: yarn lint
       - run: yarn typecheck
       - run: yarn build:pages

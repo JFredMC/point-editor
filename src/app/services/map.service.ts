@@ -3,7 +3,6 @@ import maplibregl, { GeoJSONSource, Map, MapMouseEvent, Marker, NavigationContro
 import { PointService } from './point.service';
 import { GeoJSONFeature } from '../types/geojson';
 import { MapConfig } from '../types/map';
-import { environment } from '../../environments/environment';
 
 /**
  * Default map configuration
@@ -11,13 +10,12 @@ import { environment } from '../../environments/environment';
 const default_map_config: MapConfig = {
   center: [-70.6483, -33.4569],
   zoom: 2,
-  style: 'https://tiles.stadiamaps.com/styles/osm_bright.json'
+  style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
 };
 @Injectable({
   providedIn: 'root'
 })
 export class MapService {
-  private readonly STADIA_MAPS_API_KEY = environment.stadiaMapsApiKey;
   // Services
   private readonly destroyRef = inject(DestroyRef);
   private readonly pointService = inject(PointService);
@@ -65,11 +63,10 @@ export class MapService {
     }
 
     const finalConfig = { ...default_map_config, ...config };
-    const styleWithApiKey = `${finalConfig.style}?api_key=${this.STADIA_MAPS_API_KEY}`;
 
     this.map = new Map({
       container,
-      style: styleWithApiKey,
+      style: finalConfig.style,
       center: finalConfig.center,
       zoom: finalConfig.zoom,
       attributionControl: false,

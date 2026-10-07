@@ -7,6 +7,10 @@
   </div>
   <app-search />
   <div class="top-actions">
+    <a class="brand" href="https://jfredmc.github.io/portfolio/" target="_blank" rel="noopener noreferrer" aria-label="Hecho por JFredDev: ver portafolio (se abre en otra pestaña)" title="Hecho por JFredDev">
+      <img src="brand/jfreddev.svg" alt="" width="22" height="22" />
+      <span>por <strong>JFredDev</strong></span>
+    </a>
     <button type="button" class="icon-btn" (click)="ui.helpOpen.set(true)" aria-label="Atajos de teclado" title="Atajos (?)"><i class="bi bi-keyboard"></i></button>
     <button type="button" class="icon-btn" (click)="ui.toggleTheme()" [attr.aria-label]="ui.theme() === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'" title="Tema (D)">
       <i class="bi" [class.bi-sun]="ui.theme() === 'dark'" [class.bi-moon-stars]="ui.theme() === 'light'"></i>
